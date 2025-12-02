@@ -33,6 +33,7 @@ function App() {
   }, [portfolio])
 
   const addToPortfolio = (stock, shares, amount) => {
+    console.log('Adding to portfolio:', stock.ticker, shares, 'shares @', stock.price)
     setPortfolio([...portfolio, {
       ticker: stock.ticker,
       shares,
