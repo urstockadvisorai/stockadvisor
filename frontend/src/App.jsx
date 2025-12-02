@@ -275,6 +275,28 @@ function App() {
         </div>
       )}
 
+      {/* Investment Summary */}
+      {!loading && buyStocks.length > 0 && (
+        <div className="glass-card mb-8 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-bold text-accent">Investment Plan</h3>
+            <p className="text-sm text-gray-400">
+              Allocating ${budget.toFixed(2)} across {buyStocks.length} stock{buyStocks.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-white">
+              ${buyStocks.reduce((sum, s) => {
+                const allocationAmount = (s.confidence_score / totalConfidence) * budget;
+                const shares = Math.floor(allocationAmount / s.price);
+                return sum + (shares * s.price);
+              }, 0).toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-400">Total Investment</p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
