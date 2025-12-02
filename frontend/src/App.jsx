@@ -12,10 +12,39 @@ function App() {
   const [marketMood, setMarketMood] = useState(null)
   const [showSmallAccountOnly, setShowSmallAccountOnly] = useState(false)
   const [budget, setBudget] = useState(1000)
+  const [portfolio, setPortfolio] = useState(() => {
+    // Load portfolio from localStorage
+    const saved = localStorage.getItem('stockPortfolio')
+    return saved ? JSON.parse(saved) : []
+  })
 
-  // Calculate total confidence for allocation
-  const buyStocks = stocks.filter(s => s.recommendation.includes("Buy"))
+  // Calculate available cash (budget - invested amount)
+  const investedAmount = portfolio.reduce((sum, p) => sum + (p.shares * p.price), 0)
+  const availableCash = budget - investedAmount
+
+  // Calculate total confidence for allocation (only for stocks not already owned)
+  const ownedTickers = new Set(portfolio.map(p => p.ticker))
+  const buyStocks = stocks.filter(s => s.recommendation.includes("Buy") && !ownedTickers.has(s.ticker))
   const totalConfidence = buyStocks.reduce((sum, s) => sum + s.confidence_score, 0)
+
+  // Save portfolio to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('stockPortfolio', JSON.stringify(portfolio))
+  }, [portfolio])
+
+  const addToPortfolio = (stock, shares, amount) => {
+    setPortfolio([...portfolio, {
+      ticker: stock.ticker,
+      shares,
+      price: stock.price,
+      amount,
+      purchaseDate: new Date().toISOString()
+    }])
+  }
+
+  const removeFromPortfolio = (ticker) => {
+    setPortfolio(portfolio.filter(p => p.ticker !== ticker))
+  }
 
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
@@ -275,25 +304,41 @@ function App() {
         </div>
       )}
 
-      {/* Investment Summary */}
-      {!loading && buyStocks.length > 0 && (
-        <div className="glass-card mb-8 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-bold text-accent">Investment Plan</h3>
-            <p className="text-sm text-gray-400">
-              Allocating ${budget.toFixed(2)} across {buyStocks.length} stock{buyStocks.length > 1 ? 's' : ''}
-            </p>
+      {/* Portfolio Summary */}
+      {!loading && (
+        <div className="glass-card mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-accent">Portfolio Status</h3>
+              <p className="text-sm text-gray-400">
+                {portfolio.length > 0 ? `Holding ${portfolio.length} position${portfolio.length > 1 ? 's' : ''}` : 'No positions yet'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-white">${availableCash.toFixed(2)}</p>
+              <p className="text-xs text-gray-400">Available Cash</p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-white">
-              ${buyStocks.reduce((sum, s) => {
-                const allocationAmount = (s.confidence_score / totalConfidence) * budget;
-                const shares = Math.floor(allocationAmount / s.price);
-                return sum + (shares * s.price);
-              }, 0).toFixed(2)}
-            </p>
-            <p className="text-xs text-gray-400">Total Investment</p>
-          </div>
+
+          {portfolio.length > 0 && (
+            <div className="border-t border-gray-700 pt-4 mt-4">
+              <p className="text-xs text-gray-400 mb-2">Current Holdings:</p>
+              <div className="space-y-2">
+                {portfolio.map(p => (
+                  <div key={p.ticker} className="flex justify-between items-center bg-black/20 p-2 rounded">
+                    <span className="font-mono font-bold">{p.ticker}</span>
+                    <span className="text-sm text-gray-400">{p.shares} shares @ ${p.price.toFixed(2)}</span>
+                    <button
+                      onClick={() => removeFromPortfolio(p.ticker)}
+                      className="px-2 py-1 bg-danger/20 text-danger text-xs rounded hover:bg-danger/30"
+                    >
+                      Sell
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -308,10 +353,12 @@ function App() {
           {stocks
             .filter(stock => !showSmallAccountOnly || stock.price < 50)
             .map((stock, index) => {
-              // Calculate investment allocation
+              // Calculate investment allocation using AVAILABLE cash (not total budget)
               let investment = null;
-              if (stock.recommendation.includes("Buy") && totalConfidence > 0) {
-                const allocationAmount = (stock.confidence_score / totalConfidence) * budget;
+              const isOwned = ownedTickers.has(stock.ticker);
+
+              if (stock.recommendation.includes("Buy") && !isOwned && totalConfidence > 0 && availableCash > 0) {
+                const allocationAmount = (stock.confidence_score / totalConfidence) * availableCash;
                 const shares = Math.floor(allocationAmount / stock.price);
                 if (shares > 0) {
                   investment = { shares, amount: shares * stock.price };
@@ -324,6 +371,8 @@ function App() {
                   stock={stock}
                   index={index}
                   investment={investment}
+                  isOwned={isOwned}
+                  onBuy={addToPortfolio}
                 />
               )
             })}
@@ -333,7 +382,7 @@ function App() {
   )
 }
 
-function StockCard({ stock, index, investment }) {
+function StockCard({ stock, index, investment, isOwned, onBuy }) {
   const isPositive = stock.change_percent >= 0
   const isBuy = stock.recommendation.includes("Buy")
   const currency = stock.ticker.includes('.TO') ? 'CAD' : 'USD'
@@ -404,23 +453,18 @@ function StockCard({ stock, index, investment }) {
           </ul>
         </div>
 
-        {stock.confidence_score > 65 && (
+        {isOwned ? (
+          <div className="mt-4 py-2 text-center rounded-lg bg-gray-700 text-gray-400 font-semibold">
+            ✓ Already Owned
+          </div>
+        ) : investment ? (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              const ticker = stock.ticker.replace('.TO', '');
-              navigator.clipboard.writeText(ticker);
-              alert(`Ticker "${ticker}" copied to clipboard! Pasting it in Wealthsimple...`);
-              window.open('https://my.wealthsimple.com/app/trade', '_blank');
-            }}
-            className={`block w-full mt-4 py-2 text-center rounded-lg font-semibold transition-colors ${stock.recommendation === "Strong Buy"
-              ? "bg-success text-black hover:bg-success/90"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
+            onClick={() => onBuy(stock, investment.shares, investment.amount)}
+            className="block w-full mt-4 py-2 text-center rounded-lg font-semibold transition-colors bg-accent text-black hover:bg-accent/90"
           >
-            Trade on Wealthsimple →
+            Buy {investment.shares} share{investment.shares > 1 ? 's' : ''} (${investment.amount.toFixed(2)})
           </button>
-        )}
+        ) : null}
       </div>
     </motion.div>
   )
