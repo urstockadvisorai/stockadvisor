@@ -102,8 +102,14 @@ function App() {
 
   useEffect(() => {
     fetchRecommendations(true) // Initial load shows spinner
-    if (Notification.permission === "granted") {
-      setNotificationsEnabled(true)
+
+    // Safely check for notification permission
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        setNotificationsEnabled(true)
+      }
+    } catch (e) {
+      console.log("Notification API not supported")
     }
   }, [])
 
