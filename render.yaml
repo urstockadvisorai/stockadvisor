@@ -8,10 +8,10 @@ services:
     healthCheckPath: /health
     envVars:
       - key: SENDER_EMAIL
-        fromSecret: SENDER_EMAIL
+        sync: false
       - key: SENDER_PASSWORD
-        fromSecret: SENDER_PASSWORD
+        sync: false
       - key: RECIPIENT_EMAIL
-        fromSecret: RECIPIENT_EMAIL
+        sync: false
       - key: NEWSAPI_KEY
-        fromSecret: NEWSAPI_KEY
+        sync: false
