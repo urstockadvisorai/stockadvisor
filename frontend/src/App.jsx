@@ -338,6 +338,13 @@ function StockCard({ stock, index, investment }) {
         </div>
       </div>
 
+      {/* High Growth Badge for Small Accounts */}
+      {["SOFI", "RKLB", "ASTS", "IONQ", "PLUG", "LCID", "JOBY"].includes(stock.ticker) && (
+        <div className="mb-2 inline-block px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+          🚀 High Growth Potential (5x-10x)
+        </div>
+      )}
+
       {/* Investment Badge */}
       {investment && (
         <div className="mb-4 bg-accent/10 border border-accent/20 rounded-lg p-2 flex justify-between items-center">
