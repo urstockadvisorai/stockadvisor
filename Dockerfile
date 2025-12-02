@@ -9,7 +9,7 @@ COPY frontend/ ./
 RUN npm run build
 # -------------------------------------------------
 # 2️⃣ Build the backend (FastAPI)
-FROM python:3.13-slim AS backend-builder
+FROM python:3.11-slim AS backend-builder
 WORKDIR /app/backend
 # Install OS build deps (only if needed for wheels)
 RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
@@ -19,7 +19,7 @@ COPY backend/ ./
 # -------------------------------------------------
 # 3️⃣ Runtime image (tiny)
 # 3️⃣ Runtime image (tiny)
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # OS runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
