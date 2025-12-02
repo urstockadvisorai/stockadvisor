@@ -14,7 +14,7 @@ class EmailNotifier:
         self.sender_password = os.getenv("SENDER_PASSWORD", "")
         self.recipient_email = os.getenv("RECIPIENT_EMAIL", "dealsbydelulu@gmail.com")
         self.smtp_server = "smtp.gmail.com"
-        self.smtp_port = 587
+        self.smtp_port = 465  # Use SSL port instead of 587 (STARTTLS) for Render compatibility
 
     async def send_alert(self, recommendations):
         """Send email alert for Buy/Strong Buy and Sell/Strong Sell recommendations"""
@@ -45,7 +45,7 @@ class EmailNotifier:
                 message,
                 hostname=self.smtp_server,
                 port=self.smtp_port,
-                start_tls=True,
+                use_tls=True,  # Use SSL/TLS directly instead of STARTTLS
                 username=self.sender_email,
                 password=self.sender_password,
             )
