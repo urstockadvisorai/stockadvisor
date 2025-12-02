@@ -7,11 +7,7 @@ from typing import List, Optional
 
 app = FastAPI(title="Stock Advisor API")
 
-# Serve the built React UI (static files)
-import os
-from fastapi.staticfiles import StaticFiles
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
-app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+
 
 # Configure CORS
 app.add_middleware(
@@ -92,3 +88,9 @@ async def get_stock_detail(ticker: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Serve the built React UI (static files) - MUST be last to avoid shadowing API routes
+import os
+from fastapi.staticfiles import StaticFiles
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
