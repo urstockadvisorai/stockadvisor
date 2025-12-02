@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+yfinance
+pandas
+textblob
+ta
+requests
+beautifulsoup4
+aiosmtplib
+python-dotenv
+newsapi-python

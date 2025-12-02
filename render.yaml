@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: stockplayer
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SENDER_EMAIL
+        fromSecret: SENDER_EMAIL
+      - key: SENDER_PASSWORD
+        fromSecret: SENDER_PASSWORD
+      - key: RECIPIENT_EMAIL
+        fromSecret: RECIPIENT_EMAIL
+      - key: NEWSAPI_KEY
+        fromSecret: NEWSAPI_KEY
