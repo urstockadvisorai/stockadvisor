@@ -18,16 +18,27 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 # -------------------------------------------------
 # 3️⃣ Runtime image (tiny)
+# 3️⃣ Runtime image (tiny)
 FROM python:3.13-slim
+
 # OS runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+
 # Create non‑root user
 RUN useradd -m appuser
 WORKDIR /home/appuser
+
+# Install python dependencies globally in the final stage
+# (We copy requirements from builder to keep cache, but install here to ensure they are in the path)
+COPY --from=backend-builder /app/backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 USER appuser
+
 # Copy built assets
 COPY --from=frontend-builder /app/frontend/dist ./frontend
 COPY --from=backend-builder /app/backend .
+
 # Expose FastAPI port
 EXPOSE 8000
 # Entry point
