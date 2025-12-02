@@ -177,12 +177,12 @@ class StockAnalyzer:
             # Fundamental Analysis
             fundamental_score = 0
             try:
-                # Fetch fundamentals with a 5‑second timeout to avoid hanging on slow tickers
+                # Fetch fundamentals with a 10‑second timeout to avoid hanging on slow tickers
                 async def _fetch_info(ticker_obj):
                     import asyncio
                     return await asyncio.wait_for(
                         asyncio.to_thread(lambda: ticker_obj.info),
-                        timeout=5,
+                        timeout=10,
                     )
                 info = await _fetch_info(stock)
 

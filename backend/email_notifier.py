@@ -18,8 +18,9 @@ class EmailNotifier:
 
     async def send_alert(self, recommendations):
         """Send email alert for Buy/Strong Buy and Sell/Strong Sell recommendations"""
+        # Skip email on Render (SMTP ports are blocked on free tier)
         if not self.sender_email or not self.sender_password:
-            print("Email credentials not configured. Skipping email notification.")
+            print("Email notifications disabled (SMTP blocked on Render free tier)")
             return
 
         # Filter for Buy signals (confidence >= 65) and Sell signals (confidence <= 45)
