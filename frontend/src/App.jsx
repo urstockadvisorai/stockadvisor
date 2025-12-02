@@ -11,6 +11,11 @@ function App() {
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [marketMood, setMarketMood] = useState(null)
   const [showSmallAccountOnly, setShowSmallAccountOnly] = useState(false)
+  const [budget, setBudget] = useState(1000)
+
+  // Calculate total confidence for allocation
+  const buyStocks = stocks.filter(s => s.recommendation.includes("Buy"))
+  const totalConfidence = buyStocks.reduce((sum, s) => sum + s.confidence_score, 0)
 
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
@@ -135,7 +140,18 @@ function App() {
             </h1>
             <p className="text-gray-400 mt-2">Daily Canadian & US Stock Recommendations</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            {/* Investment Budget Input */}
+            <div className="flex items-center gap-2 bg-black/30 px-3 py-2 rounded-lg border border-gray-700 mr-2">
+              <span className="text-gray-400 text-sm font-bold">Budget: $</span>
+              <input
+                type="number"
+                value={budget}
+                onChange={(e) => setBudget(Math.max(0, Number(e.target.value)))}
+                className="bg-transparent text-white w-20 outline-none font-mono font-bold"
+                placeholder="1000"
+              />
+            </div>
             <button
               onClick={requestNotificationPermission}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${notificationsEnabled ? 'bg-success/10 text-success' : 'bg-secondary text-gray-400 hover:text-white'
@@ -269,16 +285,33 @@ function App() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stocks
             .filter(stock => !showSmallAccountOnly || stock.price < 50)
-            .map((stock, index) => (
-              <StockCard key={stock.ticker} stock={stock} index={index} />
-            ))}
+            .map((stock, index) => {
+              // Calculate investment allocation
+              let investment = null;
+              if (stock.recommendation.includes("Buy") && totalConfidence > 0) {
+                const allocationAmount = (stock.confidence_score / totalConfidence) * budget;
+                const shares = Math.floor(allocationAmount / stock.price);
+                if (shares > 0) {
+                  investment = { shares, amount: shares * stock.price };
+                }
+              }
+
+              return (
+                <StockCard
+                  key={stock.ticker}
+                  stock={stock}
+                  index={index}
+                  investment={investment}
+                />
+              )
+            })}
         </div>
       )}
     </div>
   )
 }
 
-function StockCard({ stock, index }) {
+function StockCard({ stock, index, investment }) {
   const isPositive = stock.change_percent >= 0
   const isBuy = stock.recommendation.includes("Buy")
   const currency = stock.ticker.includes('.TO') ? 'CAD' : 'USD'
@@ -304,6 +337,18 @@ function StockCard({ stock, index }) {
           {stock.recommendation}
         </div>
       </div>
+
+      {/* Investment Badge */}
+      {investment && (
+        <div className="mb-4 bg-accent/10 border border-accent/20 rounded-lg p-2 flex justify-between items-center">
+          <span className="text-accent text-sm font-bold">
+            Buy {investment.shares} share{investment.shares > 1 ? 's' : ''}
+          </span>
+          <span className="text-xs text-gray-400 font-mono">
+            ≈ ${investment.amount.toFixed(2)}
+          </span>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>
