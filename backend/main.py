@@ -43,9 +43,7 @@ class StockResponse(BaseModel):
     fundamental_score: float
     market_mood: Optional[MarketMood] = None
 
-@app.get("/")
-def read_root():
-    return {"message": "Stock Advisor API is running"}
+
 
 @app.get("/api/recommendations", response_model=List[StockResponse])
 async def get_recommendations():
