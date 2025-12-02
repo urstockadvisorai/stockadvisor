@@ -68,7 +68,7 @@ function App() {
     }
     setError(null)
     try {
-      const response = await fetch('http://localhost:8000/api/recommendations')
+      const response = await fetch('/api/recommendations')
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }
